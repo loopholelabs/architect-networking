@@ -6,7 +6,7 @@ data "aws_iam_policy_document" "assume_ec2" {
   statement {
     actions = ["sts:AssumeRole"]
     principals {
-      type        = "Service"
+      type = "Service"
       identifiers = ["ec2.amazonaws.com"]
     }
   }
@@ -18,14 +18,14 @@ resource "aws_iam_role" "architect_nat" {
 }
 
 resource "aws_iam_role_policy" "architect_nat" {
-  name   = "${var.name}-policy"
-  role   = aws_iam_role.architect_nat.id
+  name = "${var.name}-policy"
+  role = aws_iam_role.architect_nat.id
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ec2:ReplaceRoute",
           "ec2:AssignPrivateIpAddresses",
           "ec2:UnassignPrivateIpAddresses",

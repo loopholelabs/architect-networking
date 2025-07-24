@@ -1,0 +1,23 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+**/.terraform/*
+.terraform.lock.hcl
+
+# SSH keys
+*.pem
+*.pub
+
+# Terraform variables
+*.tfvars
+*.tfvars.json
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI config files
+.terraformrc
+terraform.rc

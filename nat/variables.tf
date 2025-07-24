@@ -30,14 +30,14 @@ variable "internet_gateway_id" {
 
 variable "route_table_ids" {
   description = "List of route‑table IDs whose 0.0.0.0/0 route will point at eni‑blue"
-  type        = list(string)
+  type = list(string)
 }
 
 # ───── EIP options ─────
 variable "eip_allocation_ids" {
   description = "OPTIONAL list of pre‑allocated EIP allocation IDs (max 8). Leave empty to auto‑allocate."
-  type        = list(string)
-  default     = []
+  type = list(string)
+  default = []
   validation {
     condition     = length(var.eip_allocation_ids) <= 8
     error_message = "Maximum 8 EIPs supported."
@@ -103,12 +103,12 @@ variable "ssh_key_name" {
 
 variable "extra_security_group_ids" {
   description = "Additional security group IDs attached to the ENIs & instances"
-  type        = list(string)
-  default     = []
+  type = list(string)
+  default = []
 }
 
 variable "tags" {
   description = "Extra tags applied to every resource"
-  type        = map(string)
-  default     = {}
+  type = map(string)
+  default = {}
 }

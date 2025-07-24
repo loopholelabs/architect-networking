@@ -8,7 +8,7 @@ output "architect_subnet_id" {
 }
 
 output "eni_ids" {
-  value       = {
+  value = {
     blue = aws_network_interface.eni_blue.id,
     red  = aws_network_interface.eni_red.id
   }
@@ -26,7 +26,7 @@ output "eip_allocation_ids" {
 }
 
 output "autoscaling_group_names" {
-  value       = {
+  value = {
     blue = aws_autoscaling_group.blue.name,
     red  = aws_autoscaling_group.red.name
   }

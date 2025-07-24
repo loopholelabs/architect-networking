@@ -4,15 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a Terraform module for deploying Architect NAT, a high-availability NAT solution that provides fast failover through a dual-ENI architecture. The module creates infrastructure in AWS with two instances (blue/red) that can fail over in sub-seconds by moving a floating IP between ENIs and updating route tables.
+This is a Terraform module for deploying Architect NAT, a high-availability NAT solution that provides fast failover
+through a dual-ENI architecture. The module creates infrastructure in AWS with two instances (blue/red) that can fail
+over in sub-seconds by moving a floating IP between ENIs and updating route tables.
 
 ### Key Architectural Decisions
 
-1. **Dual-ENI Pattern**: Unlike traditional HA setups, this uses two persistent ENIs with a floating private IP that moves between them. This avoids slow ENI detachment/reattachment during failover.
+1. **Dual-ENI Pattern**: Unlike traditional HA setups, this uses two persistent ENIs with a floating private IP that
+   moves between them. This avoids slow ENI detachment/reattachment during failover.
 
-2. **Dedicated Subnet**: NAT instances run in an isolated "architect subnet" separate from application workloads for security and network isolation.
+2. **Dedicated Subnet**: NAT instances run in an isolated "architect subnet" separate from application workloads for
+   security and network isolation.
 
-3. **No External Dependencies**: The module directly creates ASGs and launch templates instead of using external modules to maintain full control over the configuration.
+3. **No External Dependencies**: The module directly creates ASGs and launch templates instead of using external modules
+   to maintain full control over the configuration.
 
 ## Development Commands
 
@@ -51,18 +56,22 @@ The module is split across multiple files for clarity:
 ## Critical Implementation Details
 
 ### IP Address Allocation
+
 - Blue ENI: `x.x.x.10` (primary) + `x.x.x.12` (floating)
 - Red ENI: `x.x.x.11` (primary)
 - The floating IP (`x.x.x.12`) starts on blue and moves during failover
 
 ### Failover Permissions
+
 The IAM policy must include:
+
 - `ec2:ReplaceRoute` - Update route tables
 - `ec2:AssignPrivateIpAddresses` / `ec2:UnassignPrivateIpAddresses` - Move floating IP
 - `ec2:AssociateAddress` / `ec2:DisassociateAddress` - Update EIP associations
 - `ec2:ModifyNetworkInterfaceAttribute` - Modify ENI attributes
 
 ### Security Considerations
+
 - ENIs must have `source_dest_check = false` for NAT functionality
 - Security group only allows ingress from VPC CIDR blocks
 - IPv6 is not currently supported by Architect NAT
@@ -77,6 +86,7 @@ The IAM policy must include:
 ## Testing Considerations
 
 When testing failover:
+
 1. Terminate the blue instance
 2. Verify floating IP moves to red ENI
 3. Check route tables are updated
