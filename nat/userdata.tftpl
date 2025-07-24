@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+yum -y update -q
+amazon-linux-extras enable docker && yum -y install docker jq
+systemctl enable --now docker
+
+docker run --detach --name architect-nat \
+  --network host \
+  --privileged \
+  -e LICENSE_KEY="${license_key}" \
+  ghcr.io/yourco/architect-nat:${nat_version}
+
+%{ if enable_cloudwatch_agent ~}
+yum -y install amazon-cloudwatch-agent
+cat >/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<CFG
+{"logs":{"logs_collected":{"files":{"collect_list":[{"file_path":"/var/log/messages","log_group_name":"/architect-nat/${name}","log_stream_name":"{instance_id}"}]}}}}
+CFG
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+%{ endif ~}

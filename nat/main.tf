@@ -68,27 +68,41 @@ resource "aws_route_table_association" "architect" {
   route_table_id = aws_route_table.architect.id
 }
 
-# 3) Base security group – allow **all** ingress & egress; appliance enforces policy
+# 3) Base security group – allow ingress only from within VPC
 resource "aws_security_group" "base" {
   name        = "${var.name}-sg-base"
-  description = "Architect NAT base SG: allow all ingress and egress; traffic filtering is done by the appliance"
+  description = "Architect NAT base SG: allow ingress from VPC only"
   vpc_id      = var.vpc_id
 
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = local.merged_tags
+}
+
+# Get VPC data for CIDR blocks
+data "aws_vpc" "main" {
+  id = var.vpc_id
+}
+
+# Allow all ingress from within the VPC
+resource "aws_security_group_rule" "ingress_from_vpc" {
+  type              = "ingress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = data.aws_vpc.main.cidr_block_associations[*].cidr_block
+  security_group_id = aws_security_group.base.id
+  description       = "Allow all traffic from within VPC"
+}
+
+# Allow all egress
+# Note: IPv6 is not currently supported by Architect NAT
+resource "aws_security_group_rule" "egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.base.id
+  description       = "Allow all outbound traffic"
 }
 
 ##############################
@@ -96,22 +110,19 @@ resource "aws_security_group" "base" {
 ##############################
 
 resource "aws_network_interface" "eni_blue" {
-  subnet_id       = aws_subnet.architect.id
-  private_ips     = [local.primary_blue_ip]
-  security_groups = concat([aws_security_group.base.id], var.extra_security_group_ids)
-  tags            = merge(local.merged_tags, { Name = "${var.name}-eni-blue" })
+  subnet_id         = aws_subnet.architect.id
+  private_ips       = [local.primary_blue_ip, local.floating_ip]
+  security_groups   = concat([aws_security_group.base.id], var.extra_security_group_ids)
+  source_dest_check = false
+  tags              = merge(local.merged_tags, { Name = "${var.name}-eni-blue" })
 }
 
 resource "aws_network_interface" "eni_red" {
-  subnet_id       = aws_subnet.architect.id
-  private_ips     = [local.primary_red_ip]
-  security_groups = concat([aws_security_group.base.id], var.extra_security_group_ids)
-  tags            = merge(local.merged_tags, { Name = "${var.name}-eni-red" })
-}
-
-resource "aws_network_interface_private_ips" "floating" {
-  network_interface_id = aws_network_interface.eni_blue.id
-  private_ips          = [local.floating_ip]
+  subnet_id         = aws_subnet.architect.id
+  private_ips       = [local.primary_red_ip]
+  security_groups   = concat([aws_security_group.base.id], var.extra_security_group_ids)
+  source_dest_check = false
+  tags              = merge(local.merged_tags, { Name = "${var.name}-eni-red" })
 }
 
 ##############################
@@ -119,9 +130,9 @@ resource "aws_network_interface_private_ips" "floating" {
 ##############################
 
 resource "aws_eip" "auto" {
-  count = length(var.eip_allocation_ids) == 0 ? var.eip_count : 0
-  vpc   = true
-  tags  = merge(local.merged_tags, { Name = "${var.name}-eip-${count.index}" })
+  count  = length(var.eip_allocation_ids) == 0 ? var.eip_count : 0
+  domain = "vpc"
+  tags   = merge(local.merged_tags, { Name = "${var.name}-eip-${count.index}" })
 }
 
 resource "aws_eip_association" "floating" {
@@ -177,6 +188,8 @@ resource "aws_iam_role_policy" "architect_nat" {
           "ec2:AssignPrivateIpAddresses",
           "ec2:UnassignPrivateIpAddresses",
           "ec2:AssociateAddress",
+          "ec2:DisassociateAddress",
+          "ec2:ModifyNetworkInterfaceAttribute",
           "ec2:Describe*"
         ],
         Resource = "*"
@@ -201,83 +214,162 @@ resource "aws_iam_instance_profile" "architect_nat" {
 ##############################
 
 locals {
-  userdata = <<-EOF
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    yum -y update -q
-    amazon-linux-extras enable docker && yum -y install docker jq
-    systemctl enable --now docker
-
-    docker run --detach --name architect-nat \
-      --network host \
-      --privileged \
-      -e LICENSE_KEY="${var.license_key}" \
-      ghcr.io/yourco/architect-nat:${var.nat_version}
-
-    % if var.enable_cloudwatch_agent %
-    yum -y install amazon-cloudwatch-agent
-    cat >/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<CFG
-    {"logs":{"logs_collected":{"files":{"collect_list":[{"file_path":"/var/log/messages","log_group_name":"/architect-nat/${var.name}","log_stream_name":"{instance_id}"}]}}}}
-CFG
-    /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
-    % endif
-  EOF
+  userdata = templatefile("${path.module}/userdata.tftpl", {
+    license_key              = var.license_key
+    nat_version              = var.nat_version
+    enable_cloudwatch_agent  = var.enable_cloudwatch_agent
+    name                     = var.name
+  })
 }
 
 ##############################
 # LAUNCH TEMPLATES & ASGs
 ##############################
 
-module "architect_nat_nodes" {
-  source  = "terraform-aws-modules/autoscaling/aws"
-  version = "6.6.1"
+# Blue Launch Template
+resource "aws_launch_template" "blue" {
+  name_prefix   = "${var.name}-lt-blue-"
+  image_id      = var.ami_id
+  instance_type = var.instance_type
+  key_name      = var.ssh_key_name != "" ? var.ssh_key_name : null
 
-  for_each = {
-    blue = {
-      eni_id   = aws_network_interface.eni_blue.id
-      lt_name  = "${var.name}-lt-blue"
-      asg_name = "${var.name}-asg-blue"
-      tags     = merge(local.merged_tags, { Name = "${var.name}-node-blue" })
-    }
-    red = {
-      eni_id   = aws_network_interface.eni_red.id
-      lt_name  = "${var.name}-lt-red"
-      asg_name = "${var.name}-asg-red"
-      tags     = merge(local.merged_tags, { Name = "${var.name}-node-red" })
-    }
+  iam_instance_profile {
+    name = aws_iam_instance_profile.architect_nat.name
   }
 
-  create_launch_template = true
-  launch_template_name   = each.value.lt_name
-  launch_template_tags   = each.value.tags
-  image_id               = var.ami_id
-  instance_type          = var.instance_type
-  key_name               = var.ssh_key_name != "" ? var.ssh_key_name : null
-  iam_instance_profile_name = aws_iam_instance_profile.architect_nat.name
-
-  security_groups        = concat([aws_security_group.base.id], var.extra_security_group_ids)
-  user_data_base64       = base64encode(local.userdata)
-
-  network_interfaces = [{
+  network_interfaces {
     delete_on_termination = false
     device_index          = 0
-    network_interface_id  = each.value.eni_id
-  }]
+    network_interface_id  = aws_network_interface.eni_blue.id
+  }
 
-  block_device_mappings = [{
+  block_device_mappings {
     device_name = "/dev/xvda"
-    ebs = {
+    ebs {
       volume_size           = var.root_volume_size
       volume_type           = "gp3"
       delete_on_termination = true
+      encrypted             = true
     }
-  }]
+  }
 
-  name               = each.value.asg_name
+  user_data = base64encode(local.userdata)
+
+  tag_specifications {
+    resource_type = "instance"
+    tags          = merge(local.merged_tags, { Name = "${var.name}-node-blue" })
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+    tags          = merge(local.merged_tags, { Name = "${var.name}-node-blue-root" })
+  }
+
+  tags = merge(local.merged_tags, { Name = "${var.name}-lt-blue" })
+}
+
+# Red Launch Template
+resource "aws_launch_template" "red" {
+  name_prefix   = "${var.name}-lt-red-"
+  image_id      = var.ami_id
+  instance_type = var.instance_type
+  key_name      = var.ssh_key_name != "" ? var.ssh_key_name : null
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.architect_nat.name
+  }
+
+  network_interfaces {
+    delete_on_termination = false
+    device_index          = 0
+    network_interface_id  = aws_network_interface.eni_red.id
+  }
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size           = var.root_volume_size
+      volume_type           = "gp3"
+      delete_on_termination = true
+      encrypted             = true
+    }
+  }
+
+  user_data = base64encode(local.userdata)
+
+  tag_specifications {
+    resource_type = "instance"
+    tags          = merge(local.merged_tags, { Name = "${var.name}-node-red" })
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+    tags          = merge(local.merged_tags, { Name = "${var.name}-node-red-root" })
+  }
+
+  tags = merge(local.merged_tags, { Name = "${var.name}-lt-red" })
+}
+
+# Blue Auto Scaling Group
+resource "aws_autoscaling_group" "blue" {
+  name                = "${var.name}-asg-blue"
   vpc_zone_identifier = [aws_subnet.architect.id]
-  desired_capacity   = 1
-  min_size           = 1
-  max_size           = 1
-  tags_as_map        = each.value.tags
+  desired_capacity    = 1
+  min_size            = 1
+  max_size            = 1
+  health_check_type   = "EC2"
+  health_check_grace_period = 300
+
+  launch_template {
+    id      = aws_launch_template.blue.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "${var.name}-node-blue"
+    propagate_at_launch = true
+  }
+
+  dynamic "tag" {
+    for_each = local.merged_tags
+
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = false
+    }
+  }
+}
+
+# Red Auto Scaling Group
+resource "aws_autoscaling_group" "red" {
+  name                = "${var.name}-asg-red"
+  vpc_zone_identifier = [aws_subnet.architect.id]
+  desired_capacity    = 1
+  min_size            = 1
+  max_size            = 1
+  health_check_type   = "EC2"
+  health_check_grace_period = 300
+
+  launch_template {
+    id      = aws_launch_template.red.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "${var.name}-node-red"
+    propagate_at_launch = true
+  }
+
+  dynamic "tag" {
+    for_each = local.merged_tags
+
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = false
+    }
+  }
 }

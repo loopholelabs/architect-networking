@@ -27,8 +27,8 @@ output "eip_allocation_ids" {
 
 output "autoscaling_group_names" {
   value       = {
-    blue = module.architect_nat_nodes["blue"].autoscaling_group_name,
-    red  = module.architect_nat_nodes["red"].autoscaling_group_name
+    blue = aws_autoscaling_group.blue.name,
+    red  = aws_autoscaling_group.red.name
   }
   description = "Auto Scaling Group names maintaining one Architect NAT instance per ENI"
 }
