@@ -21,5 +21,9 @@
 go.work
 go.work.sum
 
+# Workspace specific
 .idea
 .DS_Store
+
+# Terraform specific
+.terraform
