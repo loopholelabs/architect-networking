@@ -7,12 +7,12 @@ resource "aws_subnet" "architect" {
   cidr_block              = var.architect_subnet_cidr
   availability_zone       = var.availability_zone
   map_public_ip_on_launch = false
-  tags = merge(local.merged_tags, { Name = "${var.name}-subnet" })
+  tags                    = merge(local.merged_tags, { Name = "${var.name}-subnet" })
 }
 
 resource "aws_route_table" "architect" {
   vpc_id = var.vpc_id
-  tags = merge(local.merged_tags, { Name = "${var.name}-rt" })
+  tags   = merge(local.merged_tags, { Name = "${var.name}-rt" })
 }
 
 resource "aws_route" "architect_default" {

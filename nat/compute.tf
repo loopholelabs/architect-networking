@@ -33,12 +33,12 @@ resource "aws_launch_template" "blue" {
 
   tag_specifications {
     resource_type = "instance"
-    tags = merge(local.merged_tags, { Name = "${var.name}-node-blue" })
+    tags          = merge(local.merged_tags, { Name = "${var.name}-node-blue" })
   }
 
   tag_specifications {
     resource_type = "volume"
-    tags = merge(local.merged_tags, { Name = "${var.name}-node-blue-root" })
+    tags          = merge(local.merged_tags, { Name = "${var.name}-node-blue-root" })
   }
 
   tags = merge(local.merged_tags, { Name = "${var.name}-lt-blue" })
@@ -75,12 +75,12 @@ resource "aws_launch_template" "red" {
 
   tag_specifications {
     resource_type = "instance"
-    tags = merge(local.merged_tags, { Name = "${var.name}-node-red" })
+    tags          = merge(local.merged_tags, { Name = "${var.name}-node-red" })
   }
 
   tag_specifications {
     resource_type = "volume"
-    tags = merge(local.merged_tags, { Name = "${var.name}-node-red-root" })
+    tags          = merge(local.merged_tags, { Name = "${var.name}-node-red-root" })
   }
 
   tags = merge(local.merged_tags, { Name = "${var.name}-lt-red" })
@@ -89,7 +89,7 @@ resource "aws_launch_template" "red" {
 # Blue Auto Scaling Group
 resource "aws_autoscaling_group" "blue" {
   name                      = "${var.name}-asg-blue"
-  vpc_zone_identifier = [aws_subnet.architect.id]
+  vpc_zone_identifier       = [aws_subnet.architect.id]
   desired_capacity          = 1
   min_size                  = 1
   max_size                  = 1
@@ -121,7 +121,7 @@ resource "aws_autoscaling_group" "blue" {
 # Red Auto Scaling Group
 resource "aws_autoscaling_group" "red" {
   name                      = "${var.name}-asg-red"
-  vpc_zone_identifier = [aws_subnet.architect.id]
+  vpc_zone_identifier       = [aws_subnet.architect.id]
   desired_capacity          = 1
   min_size                  = 1
   max_size                  = 1

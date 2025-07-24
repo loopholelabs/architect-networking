@@ -1,0 +1,30 @@
+name: OpenTofu
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  opentofu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.10.0
+
+      - name: Tofu Init
+        id: init
+        run: tofu init
+
+      - name: Tofu fmt
+        id: fmt
+        run: tofu fmt -check
+        continue-on-error: true
+
+      - name: Tofu Validate
+        id: validate
+        run: tofu validate -no-color
