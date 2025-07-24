@@ -103,16 +103,6 @@ module "architect_nat" {
    - EIP associations are updated to maintain external connectivity
 5. **Recovery**: When blue instance is replaced, it's ready for the next failover
 
-## Comparison with AWS NAT Gateway
-
-| Feature | Architect NAT | AWS NAT Gateway |
-|---------|---------------|-----------------|
-| Cost | EC2 instance pricing | ~$45/month + data transfer |
-| Failover Speed | Sub-second | 30-60 seconds |
-| Customization | Full control | Limited |
-| Bandwidth | Instance-dependent | 45 Gbps |
-| Maintenance | Self-managed | AWS-managed |
-
 ## Maintenance
 
 - Monitor CloudWatch metrics (if enabled)
