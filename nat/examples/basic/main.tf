@@ -6,7 +6,7 @@ module "architect_nat" {
   architect_subnet_cidr = "10.0.255.0/28"
   availability_zone     = data.aws_availability_zones.available.names[0]
   internet_gateway_id   = module.vpc.igw_id
-  route_table_ids = module.vpc.private_route_table_ids
+  route_table_ids       = module.vpc.private_route_table_ids
 
   # Required inputs
   ami_id      = data.aws_ami.architect_nat.id

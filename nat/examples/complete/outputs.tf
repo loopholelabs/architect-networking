@@ -35,5 +35,5 @@ output "cloudwatch_log_group" {
 
 output "dashboard_url" {
   description = "URL to the CloudWatch dashboard"
-  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.name}#dashboards:name=${aws_cloudwatch_dashboard.architect_nat.dashboard_name}"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.id}#dashboards:name=${aws_cloudwatch_dashboard.architect_nat.dashboard_name}"
 }

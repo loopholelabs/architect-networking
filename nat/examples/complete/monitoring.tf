@@ -25,7 +25,7 @@ resource "aws_cloudwatch_dashboard" "architect_nat" {
           ]
           period = 300
           stat   = "Average"
-          region = data.aws_region.current.name
+          region = data.aws_region.current.id
           title  = "Network Traffic"
         }
       },
@@ -39,7 +39,7 @@ resource "aws_cloudwatch_dashboard" "architect_nat" {
           ]
           period = 300
           stat   = "Average"
-          region = data.aws_region.current.name
+          region = data.aws_region.current.id
           title  = "CPU Utilization"
         }
       }
