@@ -18,5 +18,5 @@ module "architect_nat" {
   ami_id        = data.aws_ami.architect_nat.id
   license_key   = var.architect_license_key
   nat_version   = "latest"
-  instance_type = "t3.micro" # x86_64 instance type
+  instance_type = "c5n.metal" # x86_64 instance type
 }
