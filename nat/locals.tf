@@ -45,7 +45,4 @@ locals {
     is_blue                 = false
     management_ip           = local.management_red_ip
   })
-  
-  # Legacy support
-  userdata = local.userdata_blue
 }
