@@ -9,8 +9,8 @@ output "architect_subnet_id" {
 
 output "eni_ids" {
   value = {
-    blue = aws_network_interface.eni_blue.id,
-    red  = aws_network_interface.eni_red.id
+    blue = aws_network_interface.blue.id,
+    red  = aws_network_interface.red.id
   }
   description = "Stable ENI IDs (blue = primary, red = standby)"
 }
@@ -49,4 +49,9 @@ output "autoscaling_group_names" {
 output "updated_route_table_ids" {
   value       = var.route_table_ids
   description = "Route tables whose default route now points to eni‑blue"
+}
+
+output "ec2_instance_connect_endpoint_id" {
+  value       = var.enable_ec2_instance_connect ? aws_ec2_instance_connect_endpoint.architect[0].id : null
+  description = "EC2 Instance Connect endpoint ID (if enabled)"
 }

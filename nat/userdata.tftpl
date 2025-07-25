@@ -7,39 +7,21 @@ sleep 10
 # Get IMDSv2 token
 TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 
-# Get the primary IP based on the instance's role (blue=.10, red=.11)
+# Get instance information
 INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
 MAC_ADDR=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/ | head -n1)
-SUBNET_CIDR=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/$${MAC_ADDR}subnet-ipv4-cidr-block)
 
-# Get all IPs on the interface
-ALL_IPS=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/$${MAC_ADDR}local-ipv4s)
+echo "Configuring routing for instance $INSTANCE_ID"
 
-# Determine primary IP (should be .10 for blue, .11 for red)
-PRIMARY_IP=""
-for IP in $ALL_IPS; do
-  if [[ "$IP" == *".10" ]] || [[ "$IP" == *".11" ]]; then
-    PRIMARY_IP=$IP
-    break
-  fi
-done
-
-if [ -z "$PRIMARY_IP" ]; then
-  echo "Error: Could not determine primary IP"
-  exit 1
-fi
-
-echo "Setting up routing with primary IP: $PRIMARY_IP"
-
-# Get the gateway
+# Get the gateway from the primary interface
 GATEWAY=$(ip route | grep default | awk '{print $3}')
 
-# Delete existing default route and add new one with correct source
+# Ensure default route uses management IP as source
 ip route del default || true
-ip route add default via $GATEWAY dev ens5 src $PRIMARY_IP
+ip route add default via $GATEWAY dev ens5 src ${management_ip}
 
 # Make the changes persistent for Ubuntu
-cat > /etc/netplan/99-fix-source-ip.yaml <<EOF
+cat > /etc/netplan/99-architect-routing.yaml <<EOF
 network:
   version: 2
   ethernets:
@@ -50,14 +32,16 @@ network:
       routes:
         - to: default
           via: $GATEWAY
-          from: $PRIMARY_IP
+          from: ${management_ip}
 EOF
 
+chmod 600 /etc/netplan/99-architect-routing.yaml
 netplan apply
 
-# Log the result
-echo "Routing configured to use primary IP $PRIMARY_IP as source"
+# Log the routing configuration
+echo "Routing configured with management IP ${management_ip} as default source"
 ip route show
+ip addr show
 
 # Optional: Install and configure Architect NAT if needed
 # docker run --detach --name architect-nat \

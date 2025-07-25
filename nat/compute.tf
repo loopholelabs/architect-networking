@@ -16,7 +16,7 @@ resource "aws_launch_template" "blue" {
   network_interfaces {
     delete_on_termination = false
     device_index          = 0
-    network_interface_id  = aws_network_interface.eni_blue.id
+    network_interface_id  = aws_network_interface.blue.id
   }
 
   block_device_mappings {
@@ -29,7 +29,7 @@ resource "aws_launch_template" "blue" {
     }
   }
 
-  # user_data = base64encode(local.userdata)
+  user_data = base64encode(local.userdata_blue)
 
   tag_specifications {
     resource_type = "instance"
@@ -58,7 +58,7 @@ resource "aws_launch_template" "red" {
   network_interfaces {
     delete_on_termination = false
     device_index          = 0
-    network_interface_id  = aws_network_interface.eni_red.id
+    network_interface_id  = aws_network_interface.red.id
   }
 
   block_device_mappings {
@@ -71,7 +71,7 @@ resource "aws_launch_template" "red" {
     }
   }
 
-  # user_data = base64encode(local.userdata)
+  user_data = base64encode(local.userdata_red)
 
   tag_specifications {
     resource_type = "instance"

@@ -95,6 +95,12 @@ variable "enable_ssm" {
   default     = false
 }
 
+variable "enable_ec2_instance_connect" {
+  description = "Create EC2 Instance Connect endpoint in the architect subnet"
+  type        = bool
+  default     = false
+}
+
 variable "ssh_key_name" {
   description = "Name of an existing EC2 key pair for SSH (optional)"
   type        = string
