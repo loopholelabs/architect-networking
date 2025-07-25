@@ -11,10 +11,10 @@ locals {
   # Management IPs (primary IPs on ENIs)
   management_blue_ip = cidrhost(var.architect_subnet_cidr, 10)
   management_red_ip  = cidrhost(var.architect_subnet_cidr, 11)
-  
+
   # Floating IPs for NAT (starting at .20)
   floating_ips = [for i in range(var.eip_count) : cidrhost(var.architect_subnet_cidr, 20 + i)]
-  
+
   # Legacy support
   primary_blue_ip = local.management_blue_ip
   primary_red_ip  = local.management_red_ip
@@ -36,7 +36,7 @@ locals {
     is_blue                 = true
     management_ip           = local.management_blue_ip
   })
-  
+
   userdata_red = templatefile("${path.module}/userdata.tftpl", {
     license_key             = var.license_key
     nat_version             = var.nat_version

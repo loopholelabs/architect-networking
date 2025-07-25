@@ -4,20 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a Terraform module for deploying Architect NAT, a high-availability NAT solution that provides fast failover
-through a dual-ENI architecture. The module creates infrastructure in AWS with two instances (blue/red) that can fail
-over in sub-seconds by moving a floating IP between ENIs and updating route tables.
+This is a Terraform module for deploying Architect NAT, a high-availability NAT solution that provides fast failover. The module creates infrastructure in AWS with two instances (blue/red) that can fail over in sub-seconds by moving floating IPs between ENIs and updating route tables.
 
 ### Key Architectural Decisions
 
-1. **Dual-ENI Pattern**: Unlike traditional HA setups, this uses two persistent ENIs with a floating private IP that
-   moves between them. This avoids slow ENI detachment/reattachment during failover.
+1. **Single ENI per Instance**: Each instance has one ENI with multiple IPs:
+   - Management IP (primary) - Used for instance management and default routing
+   - Floating IPs (secondary) - Used for NAT traffic, can be moved during failover
 
-2. **Dedicated Subnet**: NAT instances run in an isolated "architect subnet" separate from application workloads for
-   security and network isolation.
+2. **Dedicated Subnet**: NAT instances run in an isolated "architect subnet" separate from application workloads for security and network isolation.
 
-3. **No External Dependencies**: The module directly creates ASGs and launch templates instead of using external modules
-   to maintain full control over the configuration.
+3. **Management + NAT Separation**: Management IPs have their own EIPs for reliable instance access, while floating IPs have separate EIPs for NAT traffic.
+
+4. **No External Dependencies**: The module directly creates ASGs and launch templates instead of using external modules to maintain full control over the configuration.
 
 ## Development Commands
 
@@ -52,14 +51,29 @@ The module is split across multiple files for clarity:
 - `compute.tf` - Launch templates and Auto Scaling Groups
 - `locals.tf` - Computed values and user data template references
 - `userdata.tftpl` - EC2 user data script for instance initialization
+- `ec2_instance_connect.tf` - Optional EC2 Instance Connect endpoint
 
 ## Critical Implementation Details
 
 ### IP Address Allocation
 
-- Blue ENI: `x.x.x.10` (primary) + `x.x.x.12` (floating)
-- Red ENI: `x.x.x.11` (primary)
-- The floating IP (`x.x.x.12`) starts on blue and moves during failover
+With a /24 subnet (recommended):
+- `.10` - Blue instance management IP (primary, with management EIP)
+- `.11` - Red instance management IP (primary, with management EIP)
+- `.20` onwards - Floating IPs for NAT (with NAT EIPs)
+
+### ENI Configuration
+
+- Uses `private_ip_list_enabled = true` and `private_ip_list` to ensure IP ordering
+- First IP in the list is guaranteed to be primary (management IP)
+- This prevents AWS from randomly selecting which IP is primary
+
+### Routing Configuration
+
+The userdata script configures:
+- Default route uses management IP as source (has internet via management EIP)
+- NAT traffic uses floating IPs (have internet via NAT EIPs)
+- This separation ensures instances always have internet access
 
 ### Failover Permissions
 
@@ -79,23 +93,26 @@ The IAM policy must include:
 ## Module Constraints
 
 1. **Single AZ**: This module deploys to a single availability zone
-2. **Max 8 EIPs**: AWS limit for EIP associations per ENI
+2. **Max 8 EIPs**: AWS limit for secondary IPs per ENI
 3. **Required AMI**: User must provide an AMI with Architect NAT pre-installed
 4. **License Key**: Valid Architect license required in `var.license_key`
+5. **Subnet Size**: Recommend /24 or larger to accommodate all IPs
 
 ## Testing Considerations
 
 When testing failover:
 
 1. Terminate the blue instance
-2. Verify floating IP moves to red ENI
+2. Verify floating IPs move to red ENI
 3. Check route tables are updated
 4. Confirm EIP associations are maintained
 5. Test traffic flow through the new active instance
+6. Verify management access remains available
 
 ## Common Issues
 
 1. **Module version conflicts**: If switching from terraform-aws-modules/autoscaling, run `tofu init -upgrade`
-2. **EIP limits**: Ensure account has sufficient EIP quota
+2. **EIP limits**: Ensure account has sufficient EIP quota (management + NAT EIPs)
 3. **Subnet conflicts**: The architect_subnet_cidr must not overlap with existing subnets
 4. **IAM permissions**: Instances need specific EC2 permissions for failover to work
+5. **Primary IP ordering**: Always use `private_ip_list_enabled` and `private_ip_list` to ensure correct IP ordering

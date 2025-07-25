@@ -88,7 +88,7 @@ resource "aws_launch_template" "red" {
 
 # Blue Auto Scaling Group
 resource "aws_autoscaling_group" "blue" {
-  name                      = "${var.name}-asg-blue"
+  name = "${var.name}-asg-blue"
   # vpc_zone_identifier is omitted when using pre-existing ENIs
   availability_zones        = [var.availability_zone]
   desired_capacity          = 1
@@ -121,7 +121,7 @@ resource "aws_autoscaling_group" "blue" {
 
 # Red Auto Scaling Group
 resource "aws_autoscaling_group" "red" {
-  name                      = "${var.name}-asg-red"
+  name = "${var.name}-asg-red"
   # vpc_zone_identifier is omitted when using pre-existing ENIs
   availability_zones        = [var.availability_zone]
   desired_capacity          = 1
