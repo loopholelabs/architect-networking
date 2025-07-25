@@ -16,18 +16,3 @@ module "vpc" {
   enable_nat_gateway = false # We're using Architect NAT instead
   enable_vpn_gateway = false
 }
-
-# Create a route table for private subnet
-resource "aws_route_table" "private" {
-  vpc_id = module.vpc.vpc_id
-
-  tags = {
-    Name = "architect-nat-basic-private"
-  }
-}
-
-# Associate the route table with the private subnet
-resource "aws_route_table_association" "private" {
-  subnet_id      = module.vpc.private_subnets[0]
-  route_table_id = aws_route_table.private.id
-}
