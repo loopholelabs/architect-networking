@@ -35,5 +35,5 @@ resource "aws_route" "replace_default" {
 
   route_table_id         = var.route_table_ids[count.index]
   destination_cidr_block = "0.0.0.0/0"
-  network_interface_id   = aws_network_interface.eni_blue_nat.id
+  network_interface_id   = aws_network_interface.eni_blue.id
 }

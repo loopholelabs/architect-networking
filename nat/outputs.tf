@@ -9,12 +9,10 @@ output "architect_subnet_id" {
 
 output "eni_ids" {
   value = {
-    blue_primary = aws_network_interface.eni_blue_primary.id,
-    blue_nat     = aws_network_interface.eni_blue_nat.id,
-    red_primary  = aws_network_interface.eni_red_primary.id,
-    red_nat      = aws_network_interface.eni_red_nat.id
+    blue = aws_network_interface.eni_blue.id,
+    red  = aws_network_interface.eni_red.id
   }
-  description = "Stable ENI IDs (primary = SSH/management, nat = NAT traffic)"
+  description = "Stable ENI IDs (blue = primary, red = standby)"
 }
 
 output "floating_private_ip" {

@@ -16,7 +16,7 @@ resource "aws_launch_template" "blue" {
   network_interfaces {
     delete_on_termination = false
     device_index          = 0
-    network_interface_id  = aws_network_interface.eni_blue_primary.id
+    network_interface_id  = aws_network_interface.eni_blue.id
   }
 
   block_device_mappings {
@@ -58,7 +58,7 @@ resource "aws_launch_template" "red" {
   network_interfaces {
     delete_on_termination = false
     device_index          = 0
-    network_interface_id  = aws_network_interface.eni_red_primary.id
+    network_interface_id  = aws_network_interface.eni_red.id
   }
 
   block_device_mappings {
