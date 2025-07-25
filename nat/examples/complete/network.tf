@@ -17,11 +17,6 @@ module "vpc" {
   enable_vpn_gateway   = false
   enable_dns_hostnames = true
   enable_dns_support   = true
-
-  tags = {
-    Environment = "test"
-    Example     = "architect-nat-complete"
-  }
 }
 
 # Additional security group for custom rules
