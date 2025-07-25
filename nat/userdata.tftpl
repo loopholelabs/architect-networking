@@ -1,20 +1,76 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -eu pipefail
 
-yum -y update -q
-amazon-linux-extras enable docker && yum -y install docker jq
-systemctl enable --now docker
+# Wait for network to be ready
+sleep 10
 
-docker run --detach --name architect-nat \
-  --network host \
-  --privileged \
-  -e LICENSE_KEY="${license_key}" \
-  ghcr.io/yourco/architect-nat:${nat_version}
+# Get IMDSv2 token
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 
-%{ if enable_cloudwatch_agent ~}
-yum -y install amazon-cloudwatch-agent
-cat >/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<CFG
-{"logs":{"logs_collected":{"files":{"collect_list":[{"file_path":"/var/log/messages","log_group_name":"/architect-nat/${name}","log_stream_name":"{instance_id}"}]}}}}
-CFG
-/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
-%{ endif ~}
+# Get the primary IP based on the instance's role (blue=.10, red=.11)
+INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+MAC_ADDR=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/ | head -n1)
+SUBNET_CIDR=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/${MAC_ADDR}subnet-ipv4-cidr-block)
+
+# Get all IPs on the interface
+ALL_IPS=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/${MAC_ADDR}local-ipv4s)
+
+# Determine primary IP (should be .10 for blue, .11 for red)
+PRIMARY_IP=""
+for IP in $ALL_IPS; do
+  if [[ "$IP" == *".10" ]] || [[ "$IP" == *".11" ]]; then
+    PRIMARY_IP=$IP
+    break
+  fi
+done
+
+if [ -z "$PRIMARY_IP" ]; then
+  echo "Error: Could not determine primary IP"
+  exit 1
+fi
+
+echo "Setting up routing with primary IP: $PRIMARY_IP"
+
+# Get the gateway
+GATEWAY=$(ip route | grep default | awk '{print $3}')
+
+# Delete existing default route and add new one with correct source
+ip route del default || true
+ip route add default via $GATEWAY dev ens5 src $PRIMARY_IP
+
+# Make the changes persistent for Ubuntu
+cat > /etc/netplan/99-fix-source-ip.yaml <<EOF
+network:
+  version: 2
+  ethernets:
+    ens5:
+      dhcp4: true
+      dhcp4-overrides:
+        use-routes: false
+      routes:
+        - to: default
+          via: $GATEWAY
+          from: $PRIMARY_IP
+EOF
+
+netplan apply
+
+# Log the result
+echo "Routing configured to use primary IP $PRIMARY_IP as source"
+ip route show
+
+# Optional: Install and configure Architect NAT if needed
+# docker run --detach --name architect-nat \
+#   --network host \
+#   --privileged \
+#   -e LICENSE_KEY="${license_key}" \
+#   ghcr.io/yourco/architect-nat:${nat_version}
+
+# Optional: Install the cloudwatch agent if enabled
+# %{ if enable_cloudwatch_agent ~}
+# yum -y install amazon-cloudwatch-agent
+# cat >/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<CFG
+# {"logs":{"logs_collected":{"files":{"collect_list":[{"file_path":"/var/log/messages","log_group_name":"/architect-nat/${name}","log_stream_name":"{instance_id}"}]}}}}
+# CFG
+# /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+# %{ endif ~}
