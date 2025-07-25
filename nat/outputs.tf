@@ -22,9 +22,22 @@ output "floating_private_ip" {
   description = "Floating private IP that moves between ENIs"
 }
 
+output "instance_private_ips" {
+  value = {
+    blue = local.primary_blue_ip
+    red  = local.primary_red_ip
+  }
+  description = "Primary private IPs for SSH/management access to instances"
+}
+
 output "eip_allocation_ids" {
   value       = local.effective_eip_ids
   description = "Elastic IP allocation IDs bound to the floating private IP"
+}
+
+output "nat_public_ips" {
+  value       = [for eip in aws_eip.auto : eip.public_ip]
+  description = "Public IP addresses for NAT traffic"
 }
 
 output "autoscaling_group_names" {
