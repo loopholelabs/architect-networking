@@ -31,7 +31,7 @@ resource "aws_route_table_association" "architect" {
 ##############################
 
 resource "aws_route" "replace_default" {
-  for_each = toset(var.route_table_ids)
+  for_each = toset(var.route_table_ids != null ? var.route_table_ids : [])
 
   route_table_id         = each.value
   destination_cidr_block = "0.0.0.0/0"

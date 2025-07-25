@@ -15,6 +15,10 @@ module "vpc" {
 
   enable_nat_gateway = false # We're using Architect NAT instead
   enable_vpn_gateway = false
+  
+  # Create private route tables even without NAT gateway
+  manage_default_route_table = false
+  create_private_subnet_route_table = true
 }
 
 # Example AMI lookup (you would replace this with your actual AMI)
