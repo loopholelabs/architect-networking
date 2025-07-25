@@ -27,7 +27,7 @@ resource "aws_ec2_instance_connect_endpoint" "architect" {
 
   subnet_id          = aws_subnet.architect.id
   security_group_ids = [aws_security_group.ec2_instance_connect[0].id]
-  preserve_client_ip = false
+  preserve_client_ip = false # If true, instance security groups explicitly need to allow incoming traffic from client IP
 
   tags = merge(local.merged_tags, { Name = "${var.name}-ec2-instance-connect" })
 }
