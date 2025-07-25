@@ -3,21 +3,21 @@
 ##############################
 
 resource "aws_network_interface" "blue" {
-  subnet_id         = aws_subnet.architect.id
-  private_ip        = local.management_blue_ip  # Explicitly set as primary
-  private_ips       = concat([local.management_blue_ip], local.floating_ips)
-  security_groups   = concat([aws_security_group.base.id], var.extra_security_group_ids)
-  source_dest_check = false
-  tags              = merge(local.merged_tags, { Name = "${var.name}-eni-blue" })
+  subnet_id               = aws_subnet.architect.id
+  private_ip_list_enabled = true
+  private_ip_list         = concat([local.management_blue_ip], local.floating_ips)
+  security_groups         = concat([aws_security_group.base.id], var.extra_security_group_ids)
+  source_dest_check       = false
+  tags                    = merge(local.merged_tags, { Name = "${var.name}-eni-blue" })
 }
 
 resource "aws_network_interface" "red" {
-  subnet_id         = aws_subnet.architect.id
-  private_ip        = local.management_red_ip  # Explicitly set as primary
-  private_ips       = [local.management_red_ip]
-  security_groups   = concat([aws_security_group.base.id], var.extra_security_group_ids)
-  source_dest_check = false
-  tags              = merge(local.merged_tags, { Name = "${var.name}-eni-red" })
+  subnet_id               = aws_subnet.architect.id
+  private_ip_list_enabled = true
+  private_ip_list         = [local.management_red_ip]
+  security_groups         = concat([aws_security_group.base.id], var.extra_security_group_ids)
+  source_dest_check       = false
+  tags                    = merge(local.merged_tags, { Name = "${var.name}-eni-red" })
 }
 
 ##############################
