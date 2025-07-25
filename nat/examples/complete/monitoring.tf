@@ -10,7 +10,7 @@ resource "aws_cloudwatch_log_group" "architect_nat" {
 
 # CloudWatch Dashboard for monitoring
 resource "aws_cloudwatch_dashboard" "architect_nat" {
-  dashboard_name = "architect-nat-complete-example"
+  dashboard_name = "architect-nat-complete"
 
   dashboard_body = jsonencode({
     widgets = [

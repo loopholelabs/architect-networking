@@ -8,6 +8,9 @@ module "architect_nat" {
   internet_gateway_id   = module.vpc.igw_id
   route_table_ids       = module.vpc.private_route_table_ids
 
+  # SSH access (for debugging)
+  ssh_key_name = aws_key_pair.architect_nat.key_name
+
   # Required inputs
   ami_id      = data.aws_ami.architect_nat.id
   license_key = var.architect_license_key

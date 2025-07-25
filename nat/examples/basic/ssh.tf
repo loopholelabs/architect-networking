@@ -5,11 +5,11 @@ resource "tls_private_key" "architect_nat" {
 }
 
 resource "aws_key_pair" "architect_nat" {
-  key_name   = "architect-nat-complete"
+  key_name   = "architect-nat-basic"
   public_key = tls_private_key.architect_nat.public_key_openssh
 
   tags = {
-    Name = "architect-nat-complete"
+    Name = "architect-nat-basic"
   }
 }
 
