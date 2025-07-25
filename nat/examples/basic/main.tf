@@ -11,9 +11,6 @@ module "architect_nat" {
   # SSH access (for debugging)
   ssh_key_name = aws_key_pair.architect_nat.key_name
 
-  # EC2 connect endpoint (for debugging)
-  enable_ec2_instance_connect = true
-
   # Required inputs
   ami_id        = data.aws_ami.architect_nat.id
   license_key   = var.architect_license_key
