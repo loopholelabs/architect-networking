@@ -6,7 +6,7 @@ module "architect_nat" {
   architect_subnet_cidr = "10.0.255.0/28"
   availability_zone     = data.aws_availability_zones.available.names[0]
   internet_gateway_id   = module.vpc.igw_id
-  route_table_ids       = length(module.vpc.private_route_table_ids) > 0 ? module.vpc.private_route_table_ids : []
+  route_table_ids       = [aws_route_table.private.id]
 
   # SSH access (for debugging)
   ssh_key_name = aws_key_pair.architect_nat.key_name

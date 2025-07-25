@@ -31,9 +31,9 @@ resource "aws_route_table_association" "architect" {
 ##############################
 
 resource "aws_route" "replace_default" {
-  for_each = toset(var.route_table_ids != null ? var.route_table_ids : [])
+  count = length(var.route_table_ids != null ? var.route_table_ids : [])
 
-  route_table_id         = each.value
+  route_table_id         = var.route_table_ids[count.index]
   destination_cidr_block = "0.0.0.0/0"
   network_interface_id   = aws_network_interface.eni_blue.id
 }

@@ -29,7 +29,7 @@ resource "aws_launch_template" "blue" {
     }
   }
 
-  user_data = base64encode(local.userdata)
+  # user_data = base64encode(local.userdata)
 
   tag_specifications {
     resource_type = "instance"
@@ -71,7 +71,7 @@ resource "aws_launch_template" "red" {
     }
   }
 
-  user_data = base64encode(local.userdata)
+  # user_data = base64encode(local.userdata)
 
   tag_specifications {
     resource_type = "instance"
