@@ -10,10 +10,10 @@ TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-meta
 # Get the primary IP based on the instance's role (blue=.10, red=.11)
 INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
 MAC_ADDR=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/ | head -n1)
-SUBNET_CIDR=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/${MAC_ADDR}subnet-ipv4-cidr-block)
+SUBNET_CIDR=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/$${MAC_ADDR}subnet-ipv4-cidr-block)
 
 # Get all IPs on the interface
-ALL_IPS=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/${MAC_ADDR}local-ipv4s)
+ALL_IPS=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/$${MAC_ADDR}local-ipv4s)
 
 # Determine primary IP (should be .10 for blue, .11 for red)
 PRIMARY_IP=""
