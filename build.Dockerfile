@@ -19,7 +19,7 @@ RUN mkdir -p /root/go
 ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
 ENV GOPATH=/root/go
 
-RUN printf "machine github.com\nlogin loopholelabs\npassword %s\n\nmachine api.github.com\nlogin loopholelabs\npassword %s\n" "$GITHUB_TOKEN" "$GITHUB_TOKEN" > $HOME/.netrc
+RUN printf "machine github.com\nlogin loopholelabs\npassword %s\n\nmachine api.github.com\nlogin loopholelabs\npassword %s\n" "$GITHUB_TOKEN" "$GITHUB_TOKEN" > /root/.netrc
 RUN chmod 600 /root/.netrc
 
 RUN mkdir -p /root/architect-networking
