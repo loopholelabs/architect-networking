@@ -44,7 +44,7 @@ jobs:
           push: false
           load: true
           tags: ${{ github.event.repository.name }}-build:local
-          build-args: GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          build-args: GITHUB_TOKEN=${{ secrets.PERSONAL_GITHUB_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
