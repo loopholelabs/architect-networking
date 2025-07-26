@@ -16,6 +16,6 @@ module "architect_nat" {
   # Required inputs
   ami_id        = data.aws_ami.architect_nat.id
   license_key   = var.architect_license_key
-  nat_version   = "sha-6456256"
+  nat_version   = "sha-f590720"
   instance_type = "c5n.9xlarge" # x86_64 instance type
 }
