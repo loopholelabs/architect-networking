@@ -127,6 +127,60 @@ transit_config:
 #   max_packet_size: 1400
 EOF
 
+# Setup Systemd
+cat > /etc/systemd/system/architect-networking.service << EOF
+[Unit]
+Description=Architect NAT
+Documentation=https://github.com/loopholelabs/architect-networking
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+Group=root
+Environment="ARC_NET_DISABLE_DEV_WARNING=true"
+Environment="HOME=/root"
+Environment="XDG_CONFIG_HOME=/etc/architect-networking"
+Environment="XDG_STATE_HOME=/var/log/architect-networking"
+ExecStartPre=/bin/mkdir -p /var/run/architect-networking
+ExecStartPre=/bin/mkdir -p /var/log/architect-networking
+ExecStartPre=/bin/mkdir -p /root/.local
+ExecStart=docker run --user 0:0 --privileged --cap-add CAP_BPF --cap-add CAP_SYS_ADMIN --pid=host --network=host -v /sys:/sys --ulimit=memlock=-1 docker.io/loopholelabs/architect-networking-run:${nat_version} --config /etc/architect-networking/config.yaml
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=architect-nat
+
+# Security settings
+PrivateTmp=true
+ProtectSystem=false
+ProtectHome=false
+ReadWritePaths=/var/run/architect-networking /var/log/architect-networking /etc/architect-networking /root
+NoNewPrivileges=false
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Install docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh ./get-docker.sh
+
+systemctl start docker
+systemctl enable docker
+
+docker login docker.io --username loopholelabs -p ${license_key}
+docker pull docker.io/loopholelabs/architect-networking-run:${nat_version}
+
 # Optional: Install and configure Architect NAT if needed
 # docker run --detach --name architect-nat \
 #   --network host \
