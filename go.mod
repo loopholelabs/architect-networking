@@ -9,7 +9,7 @@ replace github.com/asavie/xdp => github.com/loopholelabs/xdp v0.1.0
 require (
 	github.com/adrg/xdg v0.5.3
 	github.com/loopholelabs/cmdutils v0.2.2
-	github.com/loopholelabs/conduit v0.4.2-0.20250726183927-eae1b57ea291
+	github.com/loopholelabs/conduit v0.4.2-0.20250726202005-47c92fce6ce7
 	github.com/loopholelabs/goroutine-manager v0.1.1
 	github.com/multiformats/go-multiaddr v0.16.0
 	github.com/spf13/cobra v1.9.1
@@ -19,6 +19,7 @@ require (
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/briandowns/spinner v1.23.2 // indirect
 	github.com/cilium/ebpf v0.19.0 // indirect
 	github.com/dprotaso/go-yit v0.0.0-20220510233725-9ba8df137936 // indirect
@@ -28,6 +29,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.1 // indirect
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/ipfs/go-cid v0.5.0 // indirect
@@ -52,6 +54,7 @@ require (
 	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/oapi-codegen/nethttp-middleware v1.1.2 // indirect
 	github.com/oapi-codegen/oapi-codegen/v2 v2.5.0 // indirect
+	github.com/oapi-codegen/runtime v1.1.2 // indirect
 	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
 	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect

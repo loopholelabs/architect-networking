@@ -28,3 +28,6 @@ go.work.sum
 # Terraform specific
 .terraform
 .terraform*
+
+# Build directory
+build/
