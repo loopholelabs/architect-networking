@@ -1,7 +1,6 @@
 module "architect_nat" {
   source = "../../"
 
-  name                  = "architect-nat-basic"
   vpc_id                = module.vpc.vpc_id
   architect_subnet_cidr = "10.0.255.0/24"
   availability_zone     = data.aws_availability_zones.available.names[0]
@@ -12,11 +11,11 @@ module "architect_nat" {
   ssh_key_name = aws_key_pair.architect_nat.key_name
 
   # EC2 connect endpoint (for debugging)
-  enable_ec2_instance_connect = true
+  enable_ec2_instance_connect = false
 
   # Required inputs
   ami_id        = data.aws_ami.architect_nat.id
   license_key   = var.architect_license_key
-  nat_version   = "latest"
-  instance_type = "c5n.metal" # x86_64 instance type
+  nat_version   = "sha-6456256"
+  instance_type = "c5n.9xlarge" # x86_64 instance type
 }

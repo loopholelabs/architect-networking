@@ -3,3 +3,9 @@ variable "architect_license_key" {
   type        = string
   sensitive   = true
 }
+
+variable "name" {
+  description = "Deployment Name"
+  type        = string
+  sensitive   = true
+}

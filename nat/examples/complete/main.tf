@@ -1,9 +1,8 @@
 module "architect_nat" {
   source = "../../"
 
-  name                  = "architect-nat-complete"
   vpc_id                = module.vpc.vpc_id
-  architect_subnet_cidr = "10.0.255.0/28"
+  architect_subnet_cidr = "10.0.255.0/24"
   availability_zone     = data.aws_availability_zones.available.names[0]
   internet_gateway_id   = module.vpc.igw_id
   route_table_ids       = module.vpc.private_route_table_ids
@@ -14,7 +13,7 @@ module "architect_nat" {
   nat_version = var.nat_version
 
   # Instance configuration
-  instance_type    = "t3.medium"
+  instance_type    = "c5n.9xlarge"
   root_volume_size = 20
 
   # Multiple EIPs for higher availability
@@ -32,8 +31,7 @@ module "architect_nat" {
 
   # Tags
   tags = {
-    Environment = "test"
-    Example     = "architect-nat-complete"
+    Example     = "architect-nat-demo-complete"
     ManagedBy   = "terraform"
   }
 }

@@ -7,5 +7,11 @@ variable "architect_license_key" {
 variable "nat_version" {
   description = "Version of Architect NAT to deploy"
   type        = string
-  default     = "latest"
+  default     = "sha-6456256"
+}
+
+variable "name" {
+  description = "Deployment Name"
+  type        = string
+  sensitive   = true
 }

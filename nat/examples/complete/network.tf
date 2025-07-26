@@ -6,7 +6,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 6.0"
 
-  name = "architect-nat-complete"
+  name = var.name
   cidr = "10.0.0.0/16"
 
   azs             = slice(data.aws_availability_zones.available.names, 0, 2)
@@ -21,7 +21,7 @@ module "vpc" {
 
 # Additional security group for custom rules
 resource "aws_security_group" "additional" {
-  name        = "architect-nat-additional"
+  name        = "${var.name}-additional"
   description = "Additional security group for Architect NAT"
   vpc_id      = module.vpc.vpc_id
 
@@ -35,6 +35,6 @@ resource "aws_security_group" "additional" {
   }
 
   tags = {
-    Name = "architect-nat-additional"
+    Name = "${var.name}-additional"
   }
 }
