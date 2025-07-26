@@ -169,6 +169,8 @@ LimitNPROC=4096
 WantedBy=multi-user.target
 EOF
 
+sleep 10
+
 # Install docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh ./get-docker.sh
