@@ -9,11 +9,29 @@ TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-meta
 
 # Get instance information
 INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+INTERFACE_MAC=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/ | head -n1)
 
-echo "Configuring routing for instance $INSTANCE_ID"
+echo "Configuring routing for instance $INSTANCE_ID with mac INTERFACE_MAC"
 
 # Get the gateway from the primary interface
 GATEWAY=$(ip route | grep default | awk '{print $3}')
+
+# Get the MAC address of the default gateway
+# First, ensure ARP entry exists for gateway
+ping -c 1 -W 1 $$GATEWAY > /dev/null 2>&1 || true
+sleep 1
+GATEWAY_MAC=$(arp -n | grep "^$GATEWAY " | awk '{print $3}')
+
+# Verify we got both MAC addresses
+if [ -z "$INTERFACE_MAC" ] || [ -z "$GATEWAY_MAC" ]; then
+  echo "Error: Failed to get MAC addresses"
+  echo "Interface MAC: $INTERFACE_MAC"
+  echo "Gateway MAC: $GATEWAY_MAC"
+  exit 1
+fi
+
+echo "Interface MAC: $INTERFACE_MAC"
+echo "Gateway MAC: $GATEWAY_MAC"
 
 # Set MTU immediately
 ip link set dev ens5 mtu 1500
@@ -56,15 +74,16 @@ server_config:
 
 transit_config:
   # Network interface configuration
-  # IMPORTANT: Update these MAC addresses for your environment
-  interface_mac: "12:21:08:92:1b:bb"
-  default_destination_mac: "12:fc:51:20:17:0b"
+  interface_mac: "$INTERFACE_MAC"
+  default_destination_mac: "$GATEWAY_MAC"
 
   # Management IP for this instance (optional)
   management_ip: ${management_ip}
 
   initial_nat_ips:
-    - "10.0.255.20"
+%{ for ip in floating_ips ~}
+    - "${ip}"
+%{ endfor ~}
 
   # Router and NAT feature flags
   disable_router: false

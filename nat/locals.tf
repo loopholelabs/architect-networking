@@ -35,6 +35,7 @@ locals {
     name                    = var.name
     is_blue                 = true
     management_ip           = local.management_blue_ip
+    floating_ips            = local.floating_ips
   })
 
   userdata_red = templatefile("${path.module}/userdata.tftpl", {
@@ -44,5 +45,6 @@ locals {
     name                    = var.name
     is_blue                 = false
     management_ip           = local.management_red_ip
+    floating_ips            = local.floating_ips
   })
 }
