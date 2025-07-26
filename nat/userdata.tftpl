@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu pipefail
+set -euo pipefail
 
 # Wait for network to be ready
 sleep 10
@@ -9,18 +9,19 @@ TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-meta
 
 # Get instance information
 INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
-INTERFACE_MAC=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs/ | head -n1)
+INTERFACE_MAC=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/network/interfaces/macs | head -n1 -c -1)
 
-echo "Configuring routing for instance $INSTANCE_ID with mac INTERFACE_MAC"
+echo "Configuring routing for instance $INSTANCE_ID with mac $INTERFACE_MAC"
 
 # Get the gateway from the primary interface
 GATEWAY=$(ip route | grep default | awk '{print $3}')
 
 # Get the MAC address of the default gateway
-# First, ensure ARP entry exists for gateway
-ping -c 1 -W 1 $$GATEWAY > /dev/null 2>&1 || true
+# First, ensure neighbor entry exists for gateway
+ping -c 1 -W 1 $GATEWAY > /dev/null 2>&1 || true
 sleep 1
-GATEWAY_MAC=$(arp -n | grep "^$GATEWAY " | awk '{print $3}')
+# Use ip neigh to get the MAC address
+GATEWAY_MAC=$(ip neigh get $GATEWAY dev ens5 | awk '{print $5}')
 
 # Verify we got both MAC addresses
 if [ -z "$INTERFACE_MAC" ] || [ -z "$GATEWAY_MAC" ]; then
@@ -66,7 +67,7 @@ ip addr show
 
 # Configurre Architect for Networking
 mkdir -p /var/run/architect-networking
-mpdir -p /etc/architect-networking
+mkdir -p /etc/architect-networking
 
 cat > /etc/architect-networking/config.yaml << EOF
 server_config:
