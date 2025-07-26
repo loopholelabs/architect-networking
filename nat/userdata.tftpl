@@ -15,6 +15,9 @@ echo "Configuring routing for instance $INSTANCE_ID"
 # Get the gateway from the primary interface
 GATEWAY=$(ip route | grep default | awk '{print $3}')
 
+# Set MTU immediately
+ip link set dev ens5 mtu 1500
+
 # Ensure default route uses management IP as source
 ip route del default || true
 ip route add default via $GATEWAY dev ens5 src ${management_ip}
@@ -28,6 +31,7 @@ network:
       dhcp4: true
       dhcp4-overrides:
         use-routes: false
+      mtu: 1500
       routes:
         - to: default
           via: $GATEWAY
@@ -41,6 +45,67 @@ netplan apply
 echo "Routing configured with management IP ${management_ip} as default source"
 ip route show
 ip addr show
+
+# Configurre Architect for Networking
+mkdir -p /var/run/architect-networking
+mpdir -p /etc/architect-networking
+
+cat > /etc/architect-networking/config.yaml << EOF
+server_config:
+  httpAddr: "/unix/var/run/architect-networking/architect.sock"
+
+transit_config:
+  # Network interface configuration
+  # IMPORTANT: Update these MAC addresses for your environment
+  interface_mac: "12:21:08:92:1b:bb"
+  default_destination_mac: "12:fc:51:20:17:0b"
+
+  # Management IP for this instance (optional)
+  management_ip: ${management_ip}
+
+  initial_nat_ips:
+    - "10.0.255.20"
+
+  # Router and NAT feature flags
+  disable_router: false
+  disable_outbound_nat: false
+  disable_inbound_nat: true
+  disable_interfaces: true
+
+  # Connection timeouts (in milliseconds)
+  tcp_timeout: 300000  # 5 minutes (300 seconds * 1000ms)
+  udp_timeout: 60000   # 1 minute (60 seconds * 1000ms)
+  gc_interval: 30000   # 30 seconds (30 seconds * 1000ms)
+
+  # ARP handling
+  disable_arp: false
+
+  # Event logging (set to true to reduce verbosity)
+  disable_arp_events: true
+  disable_icmp_events: true
+  disable_udp_events: true
+  disable_tcp_events: true
+
+  # Initial firewall rules (empty by default, configure via API)
+  initial_icmp_rules: []
+  initial_tcp_rules: []
+  initial_udp_rules: []
+
+  # DDoS protection
+  disable_ddos: true
+  initial_ddos_ips: []
+
+  # Interface configuration
+  generic_mode: true
+  interfaces:
+    - "ens5"
+
+# Optional StatsD configuration for metrics
+# statsd_config:
+#   address: "localhost:8125"
+#   prefix: "conduit"
+#   max_packet_size: 1400
+EOF
 
 # Optional: Install and configure Architect NAT if needed
 # docker run --detach --name architect-nat \
