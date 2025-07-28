@@ -1,5 +1,5 @@
 module "architect_nat" {
-  source = "../../"
+  source = "../.."
 
   vpc_id                = module.vpc.vpc_id
   architect_subnet_cidr = "10.0.255.0/24"

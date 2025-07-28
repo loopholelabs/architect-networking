@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package failover;
+
+option go_package = "github.com/loopholelabs/conduit/pkg/failover";
+
+// SyncStateRequest represents a request for NAT state synchronization
+message SyncStateRequest {
+  string request_id = 1;
+}
+
+// NATKey represents the unique identifier for a NAT translation entry
+message NATKey {
+  string destination_ip = 1;
+  uint32 destination_port = 2;
+  string source_ip = 3;
+  uint32 source_port = 4;
+}
+
+// NATValue represents the translated network information for a NAT entry
+message NATValue {
+  string last_seen = 1;
+  string translate_ip = 2;
+  uint32 translate_port = 3;
+}
+
+// NATKeyValuePair represents a complete NAT translation entry
+message NATKeyValuePair {
+  NATKey key = 1;
+  NATValue value = 2;
+}
+
+// NATBitmapPair represents port allocation information using bitmaps
+message NATBitmapPair {
+  string bitmap = 1;
+  string destination_ip = 2;
+  uint32 last_chunk = 3;
+  string natip = 4;
+}
+
+// NATState represents the complete NAT state
+message NATState {
+  repeated string ips = 1;
+  repeated NATKeyValuePair tcp_inbound = 2;
+  repeated NATKeyValuePair tcp_outbound = 3;
+  repeated NATKeyValuePair udp_inbound = 4;
+  repeated NATKeyValuePair udp_outbound = 5;
+  repeated NATBitmapPair nat_ports = 6;
+}
+
+// SyncStateResponse represents a response containing NAT state
+message SyncStateResponse {
+  string request_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  NATState state = 4;
+}
+
+// HealthCheckRequest represents a health check request
+message HealthCheckRequest {
+  string request_id = 1;
+}
+
+// HealthCheckResponse represents a health check response
+message HealthCheckResponse {
+  string request_id = 1;
+  bool success = 2;
+  string node_role = 3;
+  string instance_id = 4;
+}
+
+// HeartbeatRequest represents a heartbeat from primary to secondary
+message HeartbeatRequest {
+  string request_id = 1;
+  int64 timestamp = 2;
+  string primary_eni = 3;
+}
+
+// HeartbeatResponse represents a heartbeat acknowledgment
+message HeartbeatResponse {
+  string request_id = 1;
+  bool success = 2;
+  int64 timestamp = 3;
+}
+
+// FailoverService defines the RPC service for failover communication
+service FailoverService {
+  // SyncState requests NAT state from primary to secondary
+  rpc SyncState(SyncStateRequest) returns (SyncStateResponse);
+  
+  // HealthCheck checks the health and role of a node
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  
+  // Heartbeat sends periodic heartbeats from secondary to primary
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}

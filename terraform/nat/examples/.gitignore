@@ -1,7 +1,7 @@
 # Terraform files
 *.tfstate
 *.tfstate.*
-**/.terraform/*
+demo/.terraform/modules
 .terraform.lock.hcl
 
 # SSH keys

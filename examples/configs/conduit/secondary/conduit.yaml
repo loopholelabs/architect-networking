@@ -1,0 +1,59 @@
+server_config:
+  httpAddr: "/unix/tmp/conduit.sock"
+
+transit_config:
+  # Network interface configuration
+  interface_mac: "02:42:ac:14:00:14"  # Secondary container MAC
+  default_destination_mac: "02:42:ac:14:00:01"  # Gateway MAC
+  
+  # NAT configuration (empty initially, will be synced from primary)
+  initial_nat_ips: []
+  
+  # Enable router and NAT features
+  disable_router: false
+  disable_outbound_nat: false
+  disable_inbound_nat: false
+  disable_interfaces: false
+  
+  # Connection timeouts (in milliseconds)
+  tcp_timeout: 300000  # 5 minutes (300 seconds * 1000ms)
+  udp_timeout: 60000   # 1 minute (60 seconds * 1000ms)
+  gc_interval: 30000   # 30 seconds (30 seconds * 1000ms)
+  
+  # Enable ARP handling
+  disable_arp: false
+  
+  # Enable all events for debugging
+  disable_arp_events: false
+  disable_icmp_events: false
+  disable_udp_events: false
+  disable_tcp_events: false
+  
+  # Firewall rules (initially empty, can be configured via API)
+  initial_icmp_rules: []
+  initial_tcp_rules: []
+  initial_udp_rules: []
+  
+  # DDoS protection
+  disable_ddos: true  # Disable for testing
+  initial_ddos_ips: []
+
+  # Interface configuration
+  generic_mode: true
+  interfaces:
+    - "eth0"
+
+# Leader failover configuration
+leader_config:
+  eni_ip: "172.20.0.100"  # Primary's NAT IP for connection
+  port: 1022
+  leader_check_interval: 30s
+  sync_interval: 10s
+  local_socket: "/tmp/conduit.sock"
+  disable_eni_check: true
+  force_role: "secondary"
+
+# Optional StatsD configuration (disabled for now)
+# statsd_config:
+#   address: "localhost:8125"
+#   prefix: "conduit.secondary"
