@@ -7,7 +7,13 @@ variable "architect_license_key" {
 variable "nat_version" {
   description = "Version of Architect NAT to deploy"
   type        = string
-  default     = "sha-6456256"
+  default     = "sha-730616f"
+}
+
+variable "conduit_version" {
+  description = "Version of Conduit Dataplane to deploy"
+  type        = string
+  default     = "sha-cc7d06d"
 }
 
 variable "name" {

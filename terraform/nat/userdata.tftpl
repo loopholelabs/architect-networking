@@ -42,7 +42,7 @@ ip route del default || true
 ip route add default via $GATEWAY dev ens5 src ${management_ip}
 
 # Make the changes persistent for Ubuntu
-cat > /etc/netplan/99-architect-routing.yaml <<EOF
+cat > /etc/netplan/99-conduit-nat-routing.yaml <<EOF
 network:
   version: 2
   ethernets:
@@ -57,7 +57,7 @@ network:
           from: ${management_ip}
 EOF
 
-chmod 600 /etc/netplan/99-architect-routing.yaml
+chmod 600 /etc/netplan/99-conduit-nat-routing.yaml
 netplan apply
 
 # Log the routing configuration
@@ -65,14 +65,14 @@ echo "Routing configured with management IP ${management_ip} as default source"
 ip route show
 ip addr show
 
-# Configurre Architect for Networking
-mkdir -p /var/run/architect-networking
-mkdir -p /var/log/architect-networking
-mkdir -p /etc/architect-networking
+# Configure Conduit for NAT
+mkdir -p /var/run/conduit
+mkdir -p /var/log/conduit
+mkdir -p /etc/conduit
 
-cat > /etc/architect-networking/config.yaml << EOF
+cat > /etc/conduit/config.yaml << EOF
 server_config:
-  httpAddr: "/unix/var/run/architect-networking/architect.sock"
+  httpAddr: "/unix/var/run/conduit/conduit.sock"
 
 transit_config:
   # Network interface configuration
@@ -129,10 +129,10 @@ transit_config:
 EOF
 
 # Setup Systemd
-cat > /etc/systemd/system/architect-networking.service << EOF
+cat > /etc/systemd/system/conduit-nat.service << EOF
 [Unit]
-Description=Architect NAT
-Documentation=https://github.com/loopholelabs/architect-networking
+Description=Conduit NAT
+Documentation=https://github.com/loopholelabs/conduit
 After=network-online.target
 After=docker.service
 Wants=network-online.target
@@ -143,21 +143,21 @@ StartLimitIntervalSec=0
 Type=simple
 User=root
 Group=root
-ExecStartPre=/bin/mkdir -p /var/run/architect-networking
-ExecStartPre=/bin/mkdir -p /var/log/architect-networking
+ExecStartPre=/bin/mkdir -p /var/run/conduit
+ExecStartPre=/bin/mkdir -p /var/log/conduit
 ExecStartPre=/bin/mkdir -p /root/.local
-ExecStart=docker run --user 0:0 --privileged --cap-add CAP_BPF --cap-add CAP_SYS_ADMIN --pid=host --network=host -e ARC_NET_DISABLE_DEV_WARNING=true -e XDG_CONFIG_HOME=/etc/architect-networking -e XDG_STATE_HOME=/var/log/architect-networking -e HOME=/root -v /sys:/sys -v /var/log/architect-networking:/var/log/architect-networking -v /etc/architect-networking:/etc/architect-networking -v /var/run/architect-networking:/var/run/architect-networking --ulimit=memlock=-1 docker.io/loopholelabs/architect-networking-run:${nat_version} nat --config /etc/architect-networking/config.yaml
+ExecStart=docker run --user 0:0 --privileged --cap-add CAP_BPF --cap-add CAP_SYS_ADMIN --pid=host --network=host -e CONDUIT_DISABLE_DEV_WARNING=true -e XDG_CONFIG_HOME=/etc/conduit -e XDG_STATE_HOME=/var/log/conduit -e HOME=/root -v /sys:/sys -v /var/log/conduit:/var/log/conduit -v /etc/conduit:/etc/conduit -v /var/run/conduit:/var/run/conduit --ulimit=memlock=-1 docker.io/loopholelabs/conduit:${conduit_version} transit --config /etc/conduit/config.yaml
 Restart=always
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=architect-nat
+SyslogIdentifier=conduit-nat
 
 # Security settings
 PrivateTmp=true
 ProtectSystem=false
 ProtectHome=false
-ReadWritePaths=/var/run/architect-networking /var/log/architect-networking /etc/architect-networking /root
+ReadWritePaths=/var/run/conduit /var/log/conduit /etc/conduit /root
 NoNewPrivileges=false
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
@@ -180,17 +180,9 @@ systemctl start docker
 systemctl enable docker
 
 docker login docker.io --username loopholelabs -p ${license_key}
-docker pull docker.io/loopholelabs/architect-networking-run:${nat_version}
+docker pull docker.io/loopholelabs/conduit:${conduit_version}
+docker pull ghcr.io/loopholelabs/architect-networking:${nat_version}
 
 systemctl daemon-reload
-systemctl start architect-networking
-systemctl enable architect-networking
-
-# Optional: Install the cloudwatch agent if enabled
-# %{ if enable_cloudwatch_agent ~}
-# yum -y install amazon-cloudwatch-agent
-# cat >/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<CFG
-# {"logs":{"logs_collected":{"files":{"collect_list":[{"file_path":"/var/log/messages","log_group_name":"/architect-nat/${name}","log_stream_name":"{instance_id}"}]}}}}
-# CFG
-# /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
-# %{ endif ~}
+systemctl start conduit-nat
+systemctl enable conduit-nat

@@ -31,9 +31,9 @@ locals {
   userdata_blue = templatefile("${path.module}/userdata.tftpl", {
     license_key             = var.license_key
     nat_version             = var.nat_version
+    conduit_version         = var.conduit_version
     enable_cloudwatch_agent = var.enable_cloudwatch_agent
     name                    = var.name
-    is_blue                 = true
     management_ip           = local.management_blue_ip
     floating_ips            = local.floating_ips
   })
@@ -41,9 +41,9 @@ locals {
   userdata_red = templatefile("${path.module}/userdata.tftpl", {
     license_key             = var.license_key
     nat_version             = var.nat_version
+    conduit_version         = var.conduit_version
     enable_cloudwatch_agent = var.enable_cloudwatch_agent
     name                    = var.name
-    is_blue                 = false
     management_ip           = local.management_red_ip
     floating_ips            = local.floating_ips
   })

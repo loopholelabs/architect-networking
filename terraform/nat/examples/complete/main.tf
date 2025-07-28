@@ -11,6 +11,7 @@ module "architect_nat" {
   ami_id      = data.aws_ami.architect_nat.id
   license_key = var.architect_license_key
   nat_version = var.nat_version
+  conduit_version = var.conduit_version
 
   # Instance configuration
   instance_type    = "c5n.9xlarge"

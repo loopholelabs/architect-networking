@@ -82,6 +82,11 @@ variable "nat_version" {
   type        = string
 }
 
+variable "conduit_version" {
+  description = "Version tag pulled by the user‑data script"
+  type        = string
+}
+
 # Optional operational knobs retained
 variable "enable_cloudwatch_agent" {
   description = "Install and configure the CloudWatch agent"
