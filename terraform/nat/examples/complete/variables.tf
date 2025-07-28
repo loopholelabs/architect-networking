@@ -13,7 +13,7 @@ variable "nat_version" {
 variable "conduit_version" {
   description = "Version of Conduit Dataplane to deploy"
   type        = string
-  default     = "sha-cc7d06d"
+  default     = "sha-273a323"
 }
 
 variable "name" {
