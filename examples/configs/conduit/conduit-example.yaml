@@ -1,0 +1,57 @@
+server_config:
+  # HTTP API address - use unix socket for local communication
+  httpAddr: "/unix/var/run/conduit/conduit.sock"
+
+transit_config:
+  # Network interface configuration
+  # IMPORTANT: Update these MAC addresses for your environment
+  interface_mac: "12:21:08:92:1b:bb"          # Your server's interface MAC
+  default_destination_mac: "12:fc:51:20:17:0b" # Gateway/router MAC
+
+  # Management IP for this instance (optional)
+  management_ip: "10.0.255.10"
+
+  # NAT IP addresses that this instance can use
+  # IMPORTANT: Configure these for your network
+  initial_nat_ips:
+    - "10.0.255.20"
+
+  # Router and NAT feature flags
+  disable_router: false
+  disable_outbound_nat: false
+  disable_inbound_nat: false
+  disable_interfaces: false
+
+  # Connection timeouts (in milliseconds)
+  tcp_timeout: 300000  # 5 minutes (300 seconds * 1000ms)
+  udp_timeout: 60000   # 1 minute (60 seconds * 1000ms)
+  gc_interval: 30000   # 30 seconds (30 seconds * 1000ms)
+
+  # ARP handling
+  disable_arp: false
+
+  # Event logging (set to true to reduce verbosity)
+  disable_arp_events: false
+  disable_icmp_events: false
+  disable_udp_events: false
+  disable_tcp_events: false
+
+  # Initial firewall rules (empty by default, configure via API)
+  initial_icmp_rules: []
+  initial_tcp_rules: []
+  initial_udp_rules: []
+
+  # DDoS protection
+  disable_ddos: false
+  initial_ddos_ips: []
+
+  # Interface configuration
+  generic_mode: true
+  interfaces:
+    - "ens5"
+
+# Optional StatsD configuration for metrics
+# statsd_config:
+#   address: "localhost:8125"
+#   prefix: "conduit"
+#   max_packet_size: 1400[

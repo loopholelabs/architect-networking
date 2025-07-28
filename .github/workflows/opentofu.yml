@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  opentofu:
+  NAT:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,12 +19,15 @@ jobs:
       - name: Tofu Init
         id: init
         run: tofu init
+        working-directory: terraform/nat
 
       - name: Tofu fmt
         id: fmt
         run: tofu fmt -check
         continue-on-error: true
+        working-directory: terraform/nat
 
       - name: Tofu Validate
         id: validate
         run: tofu validate -no-color
+        working-directory: terraform/nat

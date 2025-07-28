@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/loopholelabs/architect-networking/cmd/nat"
 	"os"
 	"os/signal"
 
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/version"
 
+	"github.com/loopholelabs/architect-networking/cmd/failover"
 	"github.com/loopholelabs/architect-networking/internal/config"
 	architectVersion "github.com/loopholelabs/architect-networking/version"
 )
@@ -21,7 +21,7 @@ var cmd = command.New(
 	version.New[*config.Config](architectVersion.GitCommit, architectVersion.GoVersion, architectVersion.Platform, architectVersion.Version, architectVersion.BuildDate),
 	config.New,
 	[]command.SetupCommand[*config.Config]{
-		nat.Cmd(),
+		failover.Cmd(),
 	},
 )
 

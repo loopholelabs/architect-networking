@@ -1,0 +1,41 @@
+[Unit]
+Description=Conduit NAT Server
+Documentation=https://github.com/loopholelabs/conduit
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+Group=root
+Environment="CONDUIT_DISABLE_DEV_WARNING=true"
+Environment="HOME=/root"
+Environment="XDG_CONFIG_HOME=/etc/conduit"
+Environment="XDG_STATE_HOME=/var/log/conduit"
+ExecStartPre=/bin/mkdir -p /var/run/conduit
+ExecStartPre=/bin/mkdir -p /var/log/conduit
+ExecStartPre=/bin/mkdir -p /etc/conduit
+ExecStartPre=/bin/mkdir -p /root/.local
+ExecStart=/usr/bin/conduit run --config /etc/conduit/conduit.yaml
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=conduit-server
+
+# Security settings
+PrivateTmp=true
+ProtectSystem=false
+ProtectHome=false
+ReadWritePaths=/var/run/conduit /var/log/conduit /etc/conduit /root
+NoNewPrivileges=false
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

@@ -1,5 +1,5 @@
 BUILD_DOCKER_IMAGE = architect-networking-build:local
-RUN_DOCKER_IMAGE = architect-networking-run:local
+RUN_DOCKER_IMAGE = architect-networking:local
 BUILD_GIT_COMMIT = $(shell git rev-parse --short HEAD)
 BUILD_GO_VERSION = $(shell (go version | awk '{print $$3}'))
 BUILD_DATE=$(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
@@ -8,7 +8,7 @@ DEFAULT_BUILD_ARGS = -ldflags='-s -w -X github.com/loopholelabs/architect-networ
 
 .PHONY: build-image
 build-image:
-	 docker build --tag $(BUILD_DOCKER_IMAGE) --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} . -f build.Dockerfile
+	 docker build --tag $(BUILD_DOCKER_IMAGE) . -f build.Dockerfile
 
 .PHONY: run-image
 run-image:
@@ -20,4 +20,11 @@ generate:
 
 .PHONY: build
 build: generate
-	docker run --rm -v .:/root/architect-networking --privileged $(BUILD_DOCKER_IMAGE) bash -c "go build $(DEFAULT_BUILD_ARGS) -o build/arc-nat cmd/main.go"
+	docker run --rm -v .:/root/architect-networking --privileged $(BUILD_DOCKER_IMAGE) bash -c "go build $(DEFAULT_BUILD_ARGS) -o build/arc-net cmd/main.go"
+
+.PHONY: lint
+lint: generate
+	GOOS=linux golangci-lint run --fix ./...
+
+clean:
+	- rm -rf pkg/failover/*.frpc.go
