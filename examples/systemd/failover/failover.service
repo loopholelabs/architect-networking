@@ -1,0 +1,57 @@
+[Unit]
+Description=Conduit Failover Daemon
+Documentation=https://github.com/loopholelabs/conduit
+After=network-online.target conduit-server.service
+Wants=network-online.target
+Requires=conduit-server.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+Group=root
+Environment="CONDUIT_DISABLE_DEV_WARNING=true"
+Environment="HOME=/root"
+Environment="AWS_REGION=us-east-1"
+Environment="FAILOVER_PORT=1022"
+Environment="HEARTBEAT_INTERVAL=40ms"
+Environment="HEARTBEAT_MISS_THRESHOLD=3"
+Environment="LEADER_CHECK_INTERVAL=30s"
+Environment="SYNC_INTERVAL=10s"
+Environment="LOCAL_SOCKET=/unix/var/run/conduit/conduit.sock"
+EnvironmentFile=-/etc/conduit/failover.env
+ExecStartPre=/bin/mkdir -p /root/.local
+ExecStartPre=/bin/sleep 5
+ExecStart=/bin/bash -c '/usr/bin/conduit failover \
+    --eni-ip ${ENI_IP} \
+    --local-socket ${LOCAL_SOCKET} \
+    --destination-cidr ${DESTINATION_CIDR} \
+    --port ${FAILOVER_PORT} \
+    --heartbeat-interval ${HEARTBEAT_INTERVAL} \
+    --heartbeat-miss-threshold ${HEARTBEAT_MISS_THRESHOLD} \
+    --leader-check-interval ${LEADER_CHECK_INTERVAL} \
+    --sync-interval ${SYNC_INTERVAL} \
+    ${DISABLE_ENI_CHECK:+--disable-eni-check} \
+    ${FORCE_ROLE:+--force-role ${FORCE_ROLE}}'
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=conduit-failover
+
+# Security settings
+PrivateTmp=true
+ProtectSystem=false
+ProtectHome=false
+ReadWritePaths=/var/run/conduit /var/log/conduit /root
+NoNewPrivileges=false
+# Required for AWS API access and network operations
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

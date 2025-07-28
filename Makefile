@@ -20,4 +20,11 @@ generate:
 
 .PHONY: build
 build: generate
-	docker run --rm -v .:/root/architect-networking --privileged $(BUILD_DOCKER_IMAGE) bash -c "go build $(DEFAULT_BUILD_ARGS) -o build/arc-nat cmd/main.go"
+	docker run --rm -v .:/root/architect-networking --privileged $(BUILD_DOCKER_IMAGE) bash -c "go build $(DEFAULT_BUILD_ARGS) -o build/arc-net cmd/main.go"
+
+.PHONY: lint
+lint: generate
+	GOOS=linux golangci-lint run --fix ./...
+
+clean:
+	- rm -rf pkg/failover/*.frpc.go

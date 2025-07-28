@@ -4,11 +4,12 @@
 package failover
 
 import (
-	"context"
+	"context
 	"errors"
-	"github.com/loopholelabs/polyglot/v2"
+
+	"git
 	"net"
-	"sync"
+	"github.com/loopholelabs/polyglot/v2"
 
 	"crypto/tls"
 	"github.com/loopholelabs/frisbee-go"
