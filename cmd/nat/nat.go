@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	manet "github.com/multiformats/go-multiaddr/net"
@@ -119,7 +120,21 @@ func run(ch *cmdutils.Helper[*config.Config]) error {
 	}()
 	lis, err := manet.Listen(serverConfig.HTTPAddr)
 	if err != nil {
-		panic(err)
+		if strings.Contains(err.Error(), "address already in use") && strings.Contains(serverConfig.HTTPAddrStr, "unix") {
+			removeErr := os.Remove(serverConfig.HTTPAddrStr)
+			if removeErr != nil {
+				logger.Error().Err(removeErr).Msg("failed to remove old unix listen address")
+				panic(err)
+			}
+			lis, err = manet.Listen(serverConfig.HTTPAddr)
+			if err != nil {
+				logger.Error().Err(err).Msg("failed to listen on replaced unix listen address")
+				panic(err)
+			}
+		} else {
+			logger.Error().Err(err).Msg("failed to listen on address")
+			panic(err)
+		}
 	}
 	defer func() {
 		_ = lis.Close() // This will automatically clean up unix socket files
